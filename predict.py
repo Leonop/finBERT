@@ -6,27 +6,41 @@ import datetime
 import os
 import random
 import string
+import nltk
 
 
-parser = argparse.ArgumentParser(description='Sentiment analyzer')
+output_dir = "D:\Github_projects\Finbert_20201019\data\sentiment_transcript_all"
+model_path = "D:\Github_projects\Finbert_20201019\models\sentiment\phraseBank"
+if not os.path.exists(output_dir):
+    os.mkdir(output_dir)
+model = BertForSequenceClassification.from_pretrained(model_path,num_labels=3,cache_dir=None)
 
-parser.add_argument('-a', action="store_true", default=False)
-
-parser.add_argument('--text_path', type=str, help='Path to the text file.')
-parser.add_argument('--output_dir', type=str, help='Where to write the results')
-parser.add_argument('--model_path', type=str, help='Path to classifier model')
-
-args = parser.parse_args()
-
-if not os.path.exists(args.output_dir):
-    os.mkdir(args.output_dir)
+existing_files = os.listdir("D:\Github_projects\Finbert_20201019\data\sentiment_transcript_all")
 
 
-with open(args.text_path,'r') as f:
-    text = f.read()
 
-model = BertForSequenceClassification.from_pretrained(args.model_path,num_labels=3,cache_dir=None)
+files = os.listdir("D:\Github_projects\Finbert_20201019\data\pure_transcript_all")
+files.sort()
+for file_name in files:
+    try:
+        csv_filename = file_name.split(".")[0]+".csv" 
+        print(csv_filename)
+        if (csv_filename in existing_files): continue
+        path = "D:\Github_projects\Finbert_20201019\data\pure_transcript_all\%s" % str(file_name)
+        with open(path,'r') as f:
+            text = f.read()
+            f.close()
+        output = str(file_name).split(".")[0] + '.csv'
+        predict(text,model,write_to_csv=True,path=os.path.join(output_dir,output))
+    except UnicodeDecodeError:
+        with open(path,'r', encoding='utf8') as f:
+            text = f.read()
+            f.close()
+        output = str(file_name).split(".")[0] + '.csv'
+        predict(text,model,write_to_csv=True,path=os.path.join(output_dir,output))
+    #     print("error")
+
+
 #now = datetime.datetime.now().strftime("predictions_%B-%d-%Y-%I:%M.csv")
-random_filename = ''.join(random.choice(string.ascii_letters) for i in range(10))
-output = random_filename + '.csv'
-predict(text,model,write_to_csv=True,path=os.path.join(args.output_dir,output))
+#random_filename = ''.join(random.choice(string.ascii_letters) for i in range(10))
+
